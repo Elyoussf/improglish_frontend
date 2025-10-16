@@ -10,6 +10,7 @@ import {
   Globe,
 } from "lucide-react";
 
+
 /* ──────────────────────────────────────────────────────────
    TRANSLATIONS
    ────────────────────────────────────────────────────────── */
@@ -49,6 +50,8 @@ const LANGUAGES = {
     error_msg:
       "Oups ! Vérifie le nom et le format du numéro de téléphone.",
     footer_text: "Tous droits réservés.",
+    message_words_left: (n) => `${n} / 100 mots`,
+    message_too_long: "Le message ne doit pas dépasser 100 mots.",
   },
   en: {
     brand: "improglish",
@@ -83,6 +86,8 @@ const LANGUAGES = {
       "Thanks! Your message is sent. We’ll contact you very soon.",
     error_msg: "Oops! Check your name and phone number format.",
     footer_text: "All rights reserved.",
+    message_words_left: (n) => `${n} / 100 words`,
+    message_too_long: "Message must not exceed 100 words.",
   },
   es: {
     brand: "improglish",
@@ -119,6 +124,8 @@ const LANGUAGES = {
     error_msg:
       "¡Vaya! Revisa el nombre y el formato del teléfono.",
     footer_text: "Todos los derechos reservados.",
+    message_words_left: (n) => `${n} / 100 palabras`,
+    message_too_long: "El mensaje no debe exceder 100 palabras.",
   },
   ar: {
     brand: "improglish",
@@ -154,6 +161,8 @@ const LANGUAGES = {
     error_msg:
       "حدث خطأ. تحقق من الاسم وصيغة رقم الهاتف.",
     footer_text: "جميع الحقوق محفوظة.",
+    message_words_left: (n) => `${n} / 100 كلمة`,
+    message_too_long: "يجب ألا تتجاوز الرسالة 100 كلمة.",
   },
 };
 
@@ -173,7 +182,44 @@ const PACKS_DATA = [
    ────────────────────────────────────────────────────────── */
 const validatePhoneNumber = (number) =>
   /^\+\d{7,15}$/.test(number.replace(/\s/g, ""));
-  
+
+const countWords = (text) =>
+  text.trim().length === 0
+    ? 0
+    : text
+        .trim()
+        .replace(/\s+/g, " ")
+        .split(" ").filter(Boolean).length;
+
+/* ──────────────────────────────────────────────────────────
+   Tiny Toast component (no libs)
+   ────────────────────────────────────────────────────────── */
+function Toast({ open, type = "info", children, onClose }) {
+  if (!open) return null;
+  const color =
+    type === "success"
+      ? "bg-green-600"
+      : type === "error"
+      ? "bg-red-600"
+      : "bg-gray-800";
+  return (
+    <div className="fixed bottom-4 inset-x-0 px-4 z-50 sm:flex sm:justify-center">
+      <div className={`text-white ${color} rounded-xl shadow-md px-4 py-3 text-sm sm:text-base w-full sm:w-auto`}>
+        <div className="flex items-start gap-3">
+          <div className="mt-1 size-2.5 rounded-full bg-white/90"></div>
+          <div className="flex-1">{children}</div>
+          <button
+            onClick={onClose}
+            className="ml-2 text-white/90 hover:text-white"
+            aria-label="Close toast"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ──────────────────────────────────────────────────────────
    APP
@@ -189,7 +235,9 @@ const App = () => {
     message: "",
     pack: PACKS_DATA[0].hours,
   });
-  const [formStatus, setFormStatus] = useState(null);
+  const [formStatus, setFormStatus] = useState(null); // "success" | "error" | null
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState({ open: false, type: "info", msg: "" });
 
   const T = LANGUAGES[language];
   const isRTL = language === "ar";
@@ -229,46 +277,63 @@ const App = () => {
     [formData.phone]
   );
 
- const handleSubmit = async (e) => {
-  
-  e.preventDefault();
-  if (!isPhoneValid || formData.name.trim() === "") {
-    setFormStatus("error");
-    return;
-  }
-  try {
-    // If backend runs on same domain behind a reverse proxy, use relative path:
-    // const API_URL = "/api/contact";
-    const API_URL = "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact"; // dev
-    
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Must match FORM_SECRET on the server
-        "x-secret": "super-long-random-string",
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        phone: formData.phone,
-        pack: formData.pack,
-        message: formData.message || "",
-      }),
-    });
+  const words = useMemo(() => countWords(formData.message), [formData.message]);
+  const messageOK = words <= 100;
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const showToast = (type, msg) => {
+    setToast({ open: true, type, msg });
+    setTimeout(() => setToast((t) => ({ ...t, open: false })), 4000);
+  };
 
-    setFormStatus("success");
-    
-    setFormData((p) => ({ ...p, name: "", phone: "", message: "" }));
-  } catch (err) {
-    console.error(err);
-    setFormStatus("error");
-  } finally {
-    setTimeout(() => setFormStatus(null), 5000);
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
+    if (!messageOK) {
+      setFormStatus("error");
+      showToast("error", T.message_too_long);
+      return;
+    }
+    if (!isPhoneValid || formData.name.trim() === "") {
+      setFormStatus("error");
+      showToast("error", T.error_msg);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // If backend runs on same domain behind a reverse proxy, use relative path:
+      // const API_URL = "/api/contact";
+      const API_URL =
+        "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact"; // dev
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-secret": "super-long-random-string",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          pack: formData.pack,
+          message: formData.message || "",
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      setFormStatus("success");
+      showToast("success", T.success_msg);
+      setFormData((p) => ({ ...p, name: "", phone: "", message: "" }));
+    } catch (err) {
+      console.error(err);
+      setFormStatus("error");
+      showToast("error", T.error_msg);
+    } finally {
+      setLoading(false);
+      setTimeout(() => setFormStatus(null), 5000);
+    }
+  };
 
   return (
     <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 antialiased ${isRTL ? "font-[system-ui]" : ""}`}>
@@ -278,14 +343,21 @@ const App = () => {
       {/* NAVBAR */}
       <header className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 dark:bg-gray-950/60 border-b border-gray-200/60 dark:border-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 grid place-items-center text-white font-bold">
-              i
+          <a href="#" className="flex items-center gap-2 min-w-0">
+            {/* Logo.jpeg (fits nicely) */}
+            <div className="h-9 w-9 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white grid place-items-center shrink-0">
+              <img
+                src="/logo.jpeg"
+                alt="Improglish logo"
+                className="h-full w-full object-contain"
+                loading="eager"
+                decoding="async"
+              />
             </div>
-            <span className="text-xl font-extrabold tracking-tight">
+            <span className="text-xl font-extrabold tracking-tight truncate">
               {T.brand}
             </span>
-          </div>
+          </a>
 
           <div className="flex items-center gap-2 sm:gap-4">
             {/* Language */}
@@ -324,27 +396,27 @@ const App = () => {
       </header>
 
       {/* MAIN */}
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {/* HERO */}
-        <section className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800 bg-white dark:bg-gray-900 p-8 sm:p-12 shadow-sm">
+        <section className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 sm:p-10 shadow-sm">
           <div className="absolute -right-24 -top-24 size-72 rounded-full bg-indigo-500/10 blur-3xl" />
           <div className="absolute -left-24 -bottom-24 size-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
             {T.hero_title}
           </h1>
           <p
-            className={`mt-4 text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl ${
+            className={`mt-3 sm:mt-4 text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl ${
               isRTL ? "text-right ml-auto" : ""
             }`}
           >
             {T.hero_sub}
           </p>
 
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <a
               href="#packs"
-              className="inline-flex items-center gap-2 rounded-xl px-6 py-3 bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 transition will-change-transform hover:scale-[1.01]"
+              className="inline-flex items-center gap-2 rounded-xl px-5 py-3 bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 transition will-change-transform hover:scale-[1.01]"
             >
               {T.discover_packs_btn}
             </a>
@@ -352,14 +424,14 @@ const App = () => {
         </section>
 
         {/* PACKS + FEATURES */}
-        <section id="packs" className="mt-12 sm:mt-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center">
+        <section id="packs" className="mt-10 sm:mt-14">
+          <h2 className="text-2xl sm:text-4xl font-bold text-center">
             {T.packs_title}
           </h2>
 
-          <div className="mt-8 grid lg:grid-cols-3 gap-6 lg:gap-10">
+          <div className="mt-6 sm:mt-8 grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-10">
             {/* Pricing cards */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {PACKS_DATA.map((pack) => {
                 const selected = formData.pack === pack.hours;
                 return (
@@ -367,7 +439,7 @@ const App = () => {
                     key={pack.hours}
                     type="button"
                     onClick={() => handlePackSelect(pack.hours)}
-                    className={`w-full text-left rounded-2xl border p-5 transition shadow-sm hover:shadow ${
+                    className={`w-full text-left rounded-2xl border p-4 sm:p-5 transition shadow-sm hover:shadow ${
                       selected
                         ? "border-indigo-600/70 bg-indigo-50/70 dark:bg-indigo-950/40 dark:border-indigo-400 ring-2 ring-indigo-500/30"
                         : "border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-indigo-400/60"
@@ -378,7 +450,7 @@ const App = () => {
                         isRTL ? "flex-row-reverse justify-between" : "justify-between"
                       }`}
                     >
-                      <p className="text-xl font-semibold">
+                      <p className="text-lg sm:text-xl font-semibold">
                         <Clock
                           className={`inline size-5 ${
                             isRTL ? "ml-2" : "mr-2"
@@ -386,7 +458,7 @@ const App = () => {
                         />
                         {T.pack_hours(pack.hours)}
                       </p>
-                      <p className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-300">
+                      <p className="text-xl sm:text-2xl font-extrabold text-indigo-600 dark:text-indigo-300">
                         {pack.price} dh
                       </p>
                     </div>
@@ -403,9 +475,9 @@ const App = () => {
             </div>
 
             {/* Features */}
-            <div className="lg:col-span-2 rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 sm:p-8 shadow-sm">
+            <div className="lg:col-span-2 rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 sm:p-8 shadow-sm">
               <h3
-                className={`text-2xl font-semibold mb-5 flex items-center ${
+                className={`text-xl sm:text-2xl font-semibold mb-4 sm:mb-5 flex items-center ${
                   isRTL ? "flex-row-reverse justify-end" : ""
                 }`}
               >
@@ -416,7 +488,7 @@ const App = () => {
                 />
                 {T.features_title}
               </h3>
-              <ul className="space-y-4 text-base sm:text-lg">
+              <ul className="space-y-3 sm:space-y-4 text-base sm:text-lg">
                 {[T.f1, T.f2, T.f3, T.f4, T.f5].map((feature, i) => (
                   <li
                     key={i}
@@ -444,16 +516,16 @@ const App = () => {
         </section>
 
         {/* CONTACT */}
-        <section id="contact" className="mt-14 sm:mt-20">
-          <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 sm:p-8 shadow-sm">
-            <h2 className="text-3xl sm:text-4xl font-bold text-center">
+        <section id="contact" className="mt-12 sm:mt-16">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 sm:p-8 shadow-sm">
+            <h2 className="text-2xl sm:text-4xl font-bold text-center">
               {T.contact_title}
             </h2>
             <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
               {T.contact_sub}
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-5 sm:space-y-6">
               {/* Name */}
               <div>
                 <label
@@ -488,7 +560,7 @@ const App = () => {
                 >
                   {T.phone_label}
                 </label>
-                <div className={`flex rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700`}>
+                <div className="flex rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
                   <span className="inline-flex items-center px-3 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
                     <Phone className="size-4" />
                   </span>
@@ -543,7 +615,7 @@ const App = () => {
                 </select>
               </div>
 
-              {/* Message */}
+              {/* Message (≤100 words) */}
               <div>
                 <label
                   htmlFor="message"
@@ -562,21 +634,34 @@ const App = () => {
                   placeholder={T.message_placeholder}
                   className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${
                     isRTL ? "text-right" : ""
-                  }`}
+                  } ${!messageOK ? "ring-2 ring-red-500" : ""}`}
                 />
+                <div className={`mt-1 text-xs sm:text-sm ${!messageOK ? "text-red-600 dark:text-red-400" : "text-gray-500"}`}>
+                  {T.message_words_left(`${words}`)}
+                  {!messageOK && ` • ${T.message_too_long}`}
+                </div>
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                disabled={!isPhoneValid || formData.name.trim() === ""}
+                disabled={loading || !isPhoneValid || formData.name.trim() === ""}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Send className="size-5" />
-                {T.submit_btn}
+                {loading ? (
+                  <>
+                    <span className="inline-block size-5 rounded-full border-2 border-white/60 border-t-transparent animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="size-5" />
+                    {T.submit_btn}
+                  </>
+                )}
               </button>
 
-              {/* Status */}
+              {/* Status (still keep inline blocks) */}
               {formStatus === "success" && (
                 <div className="rounded-xl border border-green-500/40 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 px-4 py-3 text-center">
                   {T.success_msg}
@@ -593,11 +678,20 @@ const App = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="mt-12 border-t border-gray-200/70 dark:border-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 text-center text-sm text-gray-500">
+      <footer className="mt-10 sm:mt-12 border-t border-gray-200/70 dark:border-gray-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 text-center text-xs sm:text-sm text-gray-500">
           © {new Date().getFullYear()} {T.brand}. {T.footer_text}
         </div>
       </footer>
+
+      {/* Toast */}
+      <Toast
+        open={toast.open}
+        type={toast.type}
+        onClose={() => setToast((t) => ({ ...t, open: false }))}
+      >
+        {toast.msg}
+      </Toast>
     </div>
   );
 };
