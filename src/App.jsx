@@ -656,9 +656,9 @@ const App = () => {
       {/* NAVBAR - Adjusted for light mode */}
       <header className="sticky top-0 z-20 backdrop-blur-sm bg-white/80 border-b border-gray-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-20 flex items-center justify-between">
-          <a href="#" className="flex items-center gap-2 min-w-0">
+          <a href="logo.jpeg" className="flex items-center gap-2 min-w-0">
             <div className="h-10 w-10 rounded-xl overflow-hidden border border-blue-400 bg-blue-50 grid place-items-center shrink-0 text-xl font-bold text-blue-600">
-              <Zap className="size-5" />
+              <img src="logo.jpeg" alt="" />
             </div>
             <span className="text-2xl font-extrabold tracking-tight truncate text-blue-800">
               {T.brand}
