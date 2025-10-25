@@ -1,200 +1,207 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Phone,
-  BookOpen,
   Clock,
-  CheckCircle,
   Send,
-  Sun,
-  Moon,
   Globe,
+  CheckCircle,
+  Calendar,
+  User,
+  Zap,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 
 /* ──────────────────────────────────────────────────────────
-   TRANSLATIONS
+   DATA & TRANSLATIONS
    ────────────────────────────────────────────────────────── */
+
+// New structured data for the five packs
+const NEW_PACKS_DATA = [
+  {
+    id: 'TOP',
+    name: "Top pack",
+    price_per_hour: 83,
+    description_fr: "Consommable en 1 mois, ou au choix sur une période plus longue.",
+    description_en: "Consumable in 1 month, or flexibly over a longer period.",
+    description_es: "Consumible en 1 mes, o flexiblemente durante un período más largo.",
+    description_ar: "يمكن استهلاكه في شهر واحد، أو بمرونة على مدى فترة أطول.",
+    weekly_options: [
+      { id: '2h_3m', text_fr: "2h / semaine (3 mois)", text_en: "2h / week (3 months)", text_es: "2h / semana (3 meses)", text_ar: "2 ساعة / أسبوع (3 أشهر)" },
+      { id: '3h_2m', text_fr: "3h / semaine (2 mois)", text_en: "3h / week (2 months)", text_es: "3h / semana (2 meses)", text_ar: "3 ساعة / أسبوع (2 شهر)" }
+    ]
+  },
+  {
+    id: 'PREMIUM',
+    name: "Premium pack",
+    price_per_hour: 87.5,
+    description_fr: "Consommable en 1 mois, ou au choix sur une période plus longue.",
+    description_en: "Consumable in 1 month, or flexibly over a longer period.",
+    description_es: "Consumible en 1 mes, o flexiblemente durante un período más largo.",
+    description_ar: "يمكن استهلاكه في شهر واحد، أو بمرونة على مدى فترة أطول.",
+    weekly_options: [
+      { id: '2h_2m', text_fr: "2h / semaine (2 mois)", text_en: "2h / week (2 months)", text_es: "2h / semana (2 meses)", text_ar: "2 ساعة / أسبوع (2 شهر)" }
+    ]
+  },
+  {
+    id: 'ADVANCED',
+    name: "Advanced pack",
+    price_per_hour: 85,
+    description_fr: "Consommable en 1 mois, ou au choix sur une période plus longue.",
+    description_en: "Consumable in 1 month, or flexibly over a longer period.",
+    description_es: "Consumible en 1 mes, o flexiblemente durante un período más largo.",
+    description_ar: "يمكن استهلاكه في شهر واحد، أو بمرونة على مدى فترة أطول.",
+    weekly_options: [
+      { id: '2h_2_5m', text_fr: "2h / semaine (2.5 mois)", text_en: "2h / week (2.5 months)", text_es: "2h / semana (2.5 meses)", text_ar: "2 ساعة / أسبوع (2.5 شهر)" }
+    ]
+  },
+  {
+    id: 'STANDARD',
+    name: "Standard plan",
+    price_per_hour: 91,
+    description_fr: "Consommable en 1 mois, ou au choix sur une période plus longue.",
+    description_en: "Consumable in 1 month, or flexibly over a longer period.",
+    description_es: "Consumible en 1 mes, o flexiblemente durante un período más largo.",
+    description_ar: "يمكن استهلاكه في شهر واحد، أو بمرونة على مدى فترة أطول.",
+    weekly_options: [
+      { id: '1h_3m', text_fr: "1h / semaine (3 mois)", text_en: "1h / week (3 months)", text_es: "1h / semana (3 meses)", text_ar: "1 ساعة / أسبوع (3 أشهر)" }
+    ]
+  },
+  {
+    id: 'BASIC',
+    name: "Basic plan",
+    price_per_hour: 100,
+    description_fr: "Consommable en 1 mois, ou au choix sur une période plus longue.",
+    description_en: "Consumable in 1 month, or flexibly over a longer period.",
+    description_es: "Consumible en 1 mes, o flexiblemente durante un período más largo.",
+    description_ar: "يمكن استهلاكه في شهر واحد، أو بمرونة على مدى فترة أطول.",
+    weekly_options: [
+      { id: '1h_2m', text_fr: "1h / semaine (2 mois)", text_en: "1h / week (2 months)", text_es: "1h / semana (2 meses)", text_ar: "1 ساعة / أسبوع (2 شهر)" }
+    ]
+  },
+];
+
+// Helper to calculate total price for a standardized 8-hour pack for display purposes
+const getTotalPrice = (hourlyRate) => (hourlyRate * 8).toFixed(0);
+
+const DAYS_DATA = [
+  { fr: "Lun", en: "Mon", es: "Lun", ar: "إث" },
+  { fr: "Mar", en: "Tue", es: "Mar", ar: "ثل" },
+  { fr: "Mer", en: "Wed", es: "Mié", ar: "أر" },
+  { fr: "Jeu", en: "Thu", es: "Jue", ar: "خم" },
+  { fr: "Ven", en: "Fri", es: "Vie", ar: "جم" },
+  { fr: "Sam", en: "Sat", es: "Sáb", ar: "سب" },
+  { fr: "Dim", en: "Sun", es: "Dom", ar: "أح" },
+];
+
+const FULL_DAYS_DATA = [
+  { fr: "Lundi", en: "Monday", es: "Lunes", ar: "الاثنين" },
+  { fr: "Mardi", en: "Tuesday", es: "Martes", ar: "الثلاثاء" },
+  { fr: "Mercredi", en: "Wednesday", es: "Miércoles", ar: "الأربعاء" },
+  { fr: "Jeudi", en: "Thursday", es: "Jueves", ar: "الخميس" },
+  { fr: "Vendredi", en: "Friday", es: "Viernes", ar: "الجمعة" },
+  { fr: "Samedi", en: "Saturday", es: "Sábado", ar: "السبت" },
+  { fr: "Dimanche", en: "Sunday", es: "Domingo", ar: "الأحد" }
+];
+
+
 const LANGUAGES = {
   fr: {
-    brand: "improglish",
-    contact_btn: "Contactez-nous",
-    hero_title: "Prêt(e) à booster ton niveau de langue ?",
-    hero_sub: "Des packs flexibles, adaptés à ton rythme 🤍",
-    discover_packs_btn: "Découvrir les Packs",
-    packs_title: "Choisis ton rythme idéal",
-    pack_hours: (hours) => `${hours}h de cours`,
-    pack_weekly: (weekly) => `Soit ${weekly}h / semaine`,
-    features_title: "Inclus dans chaque pack",
-    f1: "Cours individuels en français, anglais ou espagnol.",
-    f2: "100% personnalisés selon ton niveau et objectifs.",
-    f3: "Progression rapide grâce à l’accompagnement individuel.",
-    f4: "Horaires flexibles selon ton agenda.",
-    f5: "Focus sur la pratique et la confiance à l’oral.",
-    contact_title: "On démarre ?",
-    contact_sub:
-      "Laisse-nous tes coordonnées et on te recontacte sous 24h.",
-    name_label: "Nom complet",
-    phone_label: "Numéro de téléphone",
-    phone_placeholder: "+212 6 XX XX XX XX (avec indicatif)",
-    pack_label: "Pack choisi",
-    pack_option: (hours, weekly, price) =>
-      `${hours}h (${weekly}h/semaine) • ${price} dh`,
-    message_label: "Ton message (Optionnel)",
-    message_placeholder:
-      "Parle-nous de tes objectifs et de tes disponibilités.",
+    brand: "improglish", contact_btn: "Contactez-nous", hero_title: "Prêt(e) à booster ton niveau de langue ?", hero_sub: "Des packs flexibles, adaptés à ton rythme 🤍",
+    packs_title: "1. Choisissez votre Pack", pack_price_per_hour: (price) => `${price} MAD/h`, pack_example_price: (price) => `Ex. 8h pour ${price} MAD`, pack_select_option: "Sélectionnez l'option de consommation :",
+    section_profile: "2. Votre Profil et Contact", section_availability: "3. Vos Disponibilités (Heures/Jours)",
+    name_label: "Nom complet", phone_label: "Numéro de téléphone", phone_placeholder: "+212 6 XX XX XX XX (avec indicatif)",
+    age_label: "Votre âge", age_placeholder: "Ex: 25", age_error: "Veuillez entrer un âge raisonnable (entre 10 et 99 ans).",
+    message_label: "Vos objectifs (Optionnel)", message_placeholder: "Parlez-nous de vos objectifs et de votre niveau actuel.",
     submit_btn: "Envoyer ma demande",
-    error_phone:
-      "Numéro invalide. Utilise le format international (ex: +212...).",
-    success_msg:
-      "Merci ! Ton message a bien été envoyé. On te répond très vite.",
-    error_msg:
-      "Oups ! Vérifie le nom et le format du numéro de téléphone.",
-    footer_text: "Tous droits réservés.",
-    message_words_left: (n) => `${n} / 100 mots`,
-    message_too_long: "Le message ne doit pas dépasser 100 mots.",
+    error_phone: "Numéro invalide. Utiliser le format international (ex: +212...).", error_pack_option: "Veuillez sélectionner une option de consommation pour votre pack.",
+    success_msg: "Merci ! Votre demande a bien été envoyée. On vous contacte très vite.", error_msg: "Oups ! Une erreur est survenue lors de l'envoi de la demande.",
+    footer_text: "Tous droits réservés.", availability_tip: "Cliquez sur une heure pour ajouter ou retirer un créneau.",
+    no_slot_selected: "Veuillez choisir au moins un créneau de disponibilité.",
+    days_short: DAYS_DATA.map(d => d.fr), days_long: FULL_DAYS_DATA.map(d => d.fr),
+    time_slots_title: (day) => `Créneaux disponibles pour ${day}`,
+    mobile_tip: "Sélectionnez un jour pour voir les créneaux",
   },
   en: {
-    brand: "improglish",
-    contact_btn: "Contact Us",
-    hero_title: "Ready to boost your language skills?",
-    hero_sub: "Flexible packages at your pace 🤍",
-    discover_packs_btn: "Discover Packages",
-    packs_title: "Choose your ideal pace",
-    pack_hours: (hours) => `${hours}h of classes`,
-    pack_weekly: (weekly) => `That's ${weekly}h / week`,
-    features_title: "Included in every package",
-    f1: "1-to-1 lessons in French, English, or Spanish.",
-    f2: "100% tailored to your level and goals.",
-    f3: "Faster progress with individual coaching.",
-    f4: "Flexible schedules to fit your time.",
-    f5: "Focus on practice and speaking confidence.",
-    contact_title: "Shall we start?",
-    contact_sub:
-      "Leave your details and we’ll get back to you within 24h.",
-    name_label: "Full Name",
-    phone_label: "Phone Number",
-    phone_placeholder: "+212 6 XX XX XX XX (with country code)",
-    pack_label: "Chosen Package",
-    pack_option: (hours, weekly, price) =>
-      `${hours}h (${weekly}h/week) • ${price} dh`,
-    message_label: "Your Message (Optional)",
-    message_placeholder: "Tell us about goals and availability.",
+    brand: "improglish", contact_btn: "Contact Us", hero_title: "Ready to boost your language skills?", hero_sub: "Flexible packages at your pace 🤍",
+    packs_title: "1. Choose Your Package", pack_price_per_hour: (price) => `${price} MAD/h`, pack_example_price: (price) => `E.g. 8h for ${price} MAD`, pack_select_option: "Select consumption option:",
+    section_profile: "2. Your Profile and Contact", section_availability: "3. Your Availability (Time Slots)",
+    name_label: "Full Name", phone_label: "Phone Number", phone_placeholder: "+212 6 XX XX XX XX (with country code)",
+    age_label: "Your Age", age_placeholder: "Ex: 25", age_error: "Please enter a reasonable age (between 10 and 99 years old).",
+    message_label: "Your Goals (Optional)", message_placeholder: "Tell us about your goals and current level.",
     submit_btn: "Send my request",
-    error_phone:
-      "Invalid phone number. Use international format (e.g., +212...).",
-    success_msg:
-      "Thanks! Your message is sent. We’ll contact you very soon.",
-    error_msg: "Oops! Check your name and phone number format.",
-    footer_text: "All rights reserved.",
-    message_words_left: (n) => `${n} / 100 words`,
-    message_too_long: "Message must not exceed 100 words.",
+    error_phone: "Invalid phone number. Use international format (e.g., +212...).", error_pack_option: "Please select a consumption option for your pack.",
+    success_msg: "Thanks! Your request has been sent. We'll contact you very soon.", error_msg: "Oops! An error occurred while sending the request.",
+    footer_text: "All rights reserved.", availability_tip: "Click on a time slot to add or remove it.",
+    no_slot_selected: "Please choose at least one availability slot.",
+    days_short: DAYS_DATA.map(d => d.en), days_long: FULL_DAYS_DATA.map(d => d.en),
+    time_slots_title: (day) => `Available slots for ${day}`,
+    mobile_tip: "Select a day to view slots",
   },
   es: {
-    brand: "improglish",
-    contact_btn: "Contáctanos",
-    hero_title: "¿Listo para mejorar tu idioma?",
-    hero_sub: "Paquetes flexibles a tu ritmo 🤍",
-    discover_packs_btn: "Descubrir Paquetes",
-    packs_title: "Elige tu ritmo ideal",
-    pack_hours: (hours) => `${hours}h de clases`,
-    pack_weekly: (weekly) => `Eso es ${weekly}h / semana`,
-    features_title: "Incluido en cada paquete",
-    f1: "Clases 1-a-1 en francés, inglés o español.",
-    f2: "100% personalizadas a tu nivel y objetivos.",
-    f3: "Progreso rápido con acompañamiento individual.",
-    f4: "Horarios flexibles que se adaptan a ti.",
-    f5: "Enfoque en práctica y confianza oral.",
-    contact_title: "¿Empezamos?",
-    contact_sub:
-      "Déjanos tus datos y te contactamos en menos de 24h.",
-    name_label: "Nombre completo",
-    phone_label: "Número de teléfono",
-    phone_placeholder: "+212 6 XX XX XX XX (con código país)",
-    pack_label: "Paquete elegido",
-    pack_option: (hours, weekly, price) =>
-      `${hours}h (${weekly}h/semana) • ${price} dh`,
-    message_label: "Tu mensaje (Opcional)",
-    message_placeholder:
-      "Cuéntanos tus objetivos y disponibilidad.",
-    submit_btn: "Enviar solicitud",
-    error_phone:
-      "Número inválido. Usa formato internacional (ej: +212...).",
-    success_msg:
-      "¡Gracias! Tu mensaje fue enviado. Te contactamos pronto.",
-    error_msg:
-      "¡Vaya! Revisa el nombre y el formato del teléfono.",
-    footer_text: "Todos los derechos reservados.",
-    message_words_left: (n) => `${n} / 100 palabras`,
-    message_too_long: "El mensaje no debe exceder 100 palabras.",
+    brand: "improglish", contact_btn: "Contáctanos", hero_title: "¿Listo para impulsar tus habilidades lingüísticas?", hero_sub: "Paquetes flexibles, adaptados a tu ritmo 🤍",
+    packs_title: "1. Elige tu Paquete", pack_price_per_hour: (price) => `${price} MAD/h`, pack_example_price: (price) => `Ej. 8h por ${price} MAD`, pack_select_option: "Selecciona la opción de consumo:",
+    section_profile: "2. Tu Perfil y Contacto", section_availability: "3. Tu Disponibilidad (Horarios/Días)",
+    name_label: "Nombre completo", phone_label: "Número de teléfono", phone_placeholder: "+212 6 XX XX XX XX (con código de país)",
+    age_label: "Tu edad", age_placeholder: "Ej: 25", age_error: "Por favor, introduce una edad razonable (entre 10 y 99 años).",
+    message_label: "Tus Objetivos (Opcional)", message_placeholder: "Cuéntanos sobre tus objetivos y tu nivel actual.",
+    submit_btn: "Enviar mi solicitud",
+    error_phone: "Número inválido. Utiliza el formato internacional (ej: +212...).", error_pack_option: "Por favor, selecciona una opción de consumo para tu paquete.",
+    success_msg: "¡Gracias! Tu solicitud ha sido enviada. Te contactaremos muy pronto.", error_msg: "¡Ups! Ocurrió un error al enviar la solicitud.",
+    footer_text: "Todos los derechos reservados.", availability_tip: "Haz clic en una hora para agregar o eliminar un espacio.",
+    no_slot_selected: "Por favor, elige al menos un espacio de disponibilidad.",
+    days_short: DAYS_DATA.map(d => d.es), days_long: FULL_DAYS_DATA.map(d => d.es),
+    time_slots_title: (day) => `Espacios disponibles para ${day}`,
+    mobile_tip: "Selecciona un día para ver los espacios",
   },
   ar: {
-    brand: "improglish",
-    contact_btn: "تواصل معنا",
-    hero_title: "جاهز لتعزيز مهاراتك اللغوية؟",
-    hero_sub: "باقات مرنة تناسب وتيرتك 🤍",
-    discover_packs_btn: "اكتشف الباقات",
-    packs_title: "اختر وتيرتك المثالية",
-    pack_hours: (hours) => `${hours} ساعة`,
-    pack_weekly: (weekly) => `بمعدل ${weekly} ساعة/أسبوع`,
-    features_title: "ماذا يتضمن كل باقة",
-    f1: "دروس فردية بالفرنسية أو الإنجليزية أو الإسبانية.",
-    f2: "مخصصة 100% بحسب مستواك وأهدافك.",
-    f3: "تقدم سريع بفضل المتابعة الفردية.",
-    f4: "مواعيد مرنة تناسب جدولك.",
-    f5: "تركيز على الممارسة والثقة في التحدث.",
-    contact_title: "نبدأ؟",
-    contact_sub:
-      "اترك بياناتك وسنتواصل معك خلال 24 ساعة.",
-    name_label: "الاسم الكامل",
-    phone_label: "رقم الهاتف",
-    phone_placeholder: "+212 6 XX XX XX XX (مع رمز الدولة)",
-    pack_label: "الباقة المختارة",
-    pack_option: (hours, weekly, price) =>
-      `${hours} ساعة (${weekly} ساعة/أسبوع) • ${price} درهم`,
-    message_label: "رسالتك (اختياري)",
-    message_placeholder: "أخبرنا عن أهدافك وتوافرك.",
-    submit_btn: "إرسال",
-    error_phone:
-      "رقم غير صالح. استخدم التنسيق الدولي (مثال: +212...).",
-    success_msg:
-      "شكرًا! تم إرسال رسالتك. سنتواصل معك قريبًا.",
-    error_msg:
-      "حدث خطأ. تحقق من الاسم وصيغة رقم الهاتف.",
-    footer_text: "جميع الحقوق محفوظة.",
-    message_words_left: (n) => `${n} / 100 كلمة`,
-    message_too_long: "يجب ألا تتجاوز الرسالة 100 كلمة.",
+    brand: "improglish", contact_btn: "اتصل بنا", hero_title: "هل أنت مستعد لتعزيز مهاراتك اللغوية؟", hero_sub: "باقات مرنة، تناسب إيقاعك 🤍",
+    packs_title: "1. اختر باقتك", pack_price_per_hour: (price) => `${price} درهم/ساعة`, pack_example_price: (price) => `مثال 8 ساعات مقابل ${price} درهم`, pack_select_option: "اختر خيار الاستهلاك:",
+    section_profile: "2. ملفك الشخصي وجهة الاتصال", section_availability: "3. أوقات فراغك (الساعات/الأيام)",
+    name_label: "الاسم الكامل", phone_label: "رقم الهاتف", phone_placeholder: "+212 6 XX XX XX XX (مع رمز البلد)",
+    age_label: "عمرك", age_placeholder: "مثال: 25", age_error: "يرجى إدخال عمر معقول (بين 10 و 99 سنة).",
+    message_label: "أهدافك (اختياري)", message_placeholder: "أخبرنا عن أهدافك ومستواك الحالي.",
+    submit_btn: "إرسال طلبي",
+    error_phone: "رقم هاتف غير صالح. استخدم التنسيق الدولي (مثال: +212...).", error_pack_option: "يرجى تحديد خيار استهلاك لباقة.",
+    success_msg: "شكراً لك! لقد تم إرسال طلبك بنجاح. سنتصل بك قريباً جداً.", error_msg: "عذراً! حدث خطأ أثناء إرسال الطلب.",
+    footer_text: "جميع الحقوق محفوظة.", availability_tip: "انقر على ساعة لإضافة أو إزالة فترة زمنية.",
+    no_slot_selected: "يرجى اختيار فترة زمنية واحدة على الأقل للتوافر.",
+    days_short: DAYS_DATA.map(d => d.ar), days_long: FULL_DAYS_DATA.map(d => d.ar),
+    time_slots_title: (day) => `الأوقات المتاحة ليوم ${day}`,
+    mobile_tip: "اختر يوماً لعرض الأوقات",
   },
 };
 
-/* ──────────────────────────────────────────────────────────
-   DATA
-   ────────────────────────────────────────────────────────── */
-const PACKS_DATA = [
-  { hours: 8, price: 700, weekly: 2 },
-  { hours: 12, price: 1000, weekly: 3 },
-  { hours: 16, price: 1400, weekly: 4 },
-  { hours: 20, price: 1800, weekly: 5 },
-  { hours: 24, price: 2200, weekly: 6 },
-];
+// Helper to get day name for the availability key (always using English long name)
+const getDayKey = (dayIndex) => FULL_DAYS_DATA[dayIndex].en;
 
 /* ──────────────────────────────────────────────────────────
-   HELPERS
+   HELPERS & VALIDATION
    ────────────────────────────────────────────────────────── */
+const API_URL = "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact"; // Placeholder endpoint
+
 const validatePhoneNumber = (number) =>
   /^\+\d{7,15}$/.test(number.replace(/\s/g, ""));
 
-const countWords = (text) =>
-  text.trim().length === 0
-    ? 0
-    : text
-        .trim()
-        .replace(/\s+/g, " ")
-        .split(" ").filter(Boolean).length;
+const validateAge = (age) => {
+  const num = parseInt(age, 10);
+  return num >= 10 && num <= 99;
+};
+
+const formatTime = (hour) => {
+  const padded = String(hour).padStart(2, '0');
+  return `${padded}:00 - ${String(hour + 1).padStart(2, '0')}:00`;
+};
+
+// Timeslots for a whole day (e.g., 8:00 to 22:00)
+const TIME_SLOTS = Array.from({ length: 14 }, (_, i) => i + 8); // 8, 9, ..., 21
+
 
 /* ──────────────────────────────────────────────────────────
    Tiny Toast component (no libs)
    ────────────────────────────────────────────────────────── */
-function Toast({ open, type = "info", children, onClose }) {
+function Toast({ open, type = "info", children, onClose, isRTL }) {
   if (!open) return null;
   const color =
     type === "success"
@@ -203,14 +210,14 @@ function Toast({ open, type = "info", children, onClose }) {
       ? "bg-red-600"
       : "bg-gray-800";
   return (
-    <div className="fixed bottom-4 inset-x-0 px-4 z-50 sm:flex sm:justify-center">
+    <div className={`fixed bottom-4 inset-x-0 px-4 z-50 sm:flex sm:justify-center ${isRTL ? 'rtl' : 'ltr'}`}>
       <div className={`text-white ${color} rounded-xl shadow-md px-4 py-3 text-sm sm:text-base w-full sm:w-auto`}>
         <div className="flex items-start gap-3">
-          <div className="mt-1 size-2.5 rounded-full bg-white/90"></div>
-          <div className="flex-1">{children}</div>
+          <div className="mt-1 size-2.5 rounded-full bg-white/90 shrink-0"></div>
+          <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>{children}</div>
           <button
             onClick={onClose}
-            className="ml-2 text-white/90 hover:text-white"
+            className="ml-2 text-white/90 hover:text-white shrink-0"
             aria-label="Close toast"
           >
             ×
@@ -222,45 +229,253 @@ function Toast({ open, type = "info", children, onClose }) {
 }
 
 /* ──────────────────────────────────────────────────────────
+   Availability / Date Picker Component (Responsive Redesign)
+   ────────────────────────────────────────────────────────── */
+const SchedulePicker = ({ T, language, availability, setAvailability, isRTL }) => {
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0); // 0 = Monday
+
+  const toggleSlot = useCallback((dayIndex, hour) => {
+    const dayKey = getDayKey(dayIndex); 
+    setAvailability(prev => {
+      const currentSlots = prev[dayKey] || [];
+      
+      if (currentSlots.includes(hour)) {
+        return {
+          ...prev,
+          [dayKey]: currentSlots.filter(h => h !== hour)
+        };
+      } else {
+        return {
+          ...prev,
+          [dayKey]: [...currentSlots, hour].sort((a, b) => a - b)
+        };
+      }
+    });
+  }, [setAvailability]);
+
+  // Mobile View: Shows slots for the selected day only
+  const renderMobileView = () => {
+    const currentDayKey = getDayKey(selectedDayIndex);
+    const slots = availability[currentDayKey] || [];
+    
+    return (
+      <div className="space-y-4">
+        {/* Day Selector (Horizontal Scroll) */}
+        <div className="flex items-center justify-between text-lg font-semibold text-indigo-400 dark:text-indigo-300">
+            <button
+                type="button"
+                onClick={() => setSelectedDayIndex(prev => (prev > 0 ? prev - 1 : T.days_long.length - 1))}
+                className={`p-2 rounded-full hover:bg-white/10 transition ${isRTL ? 'transform rotate-180' : ''}`}
+                aria-label="Previous day"
+            >
+                <ChevronLeft className="size-5" />
+            </button>
+            <div className="min-w-[100px] text-center">
+                {T.days_long[selectedDayIndex]}
+            </div>
+            <button
+                type="button"
+                onClick={() => setSelectedDayIndex(prev => (prev < T.days_long.length - 1 ? prev + 1 : 0))}
+                className={`p-2 rounded-full hover:bg-white/10 transition ${isRTL ? 'transform rotate-180' : ''}`}
+                aria-label="Next day"
+            >
+                <ChevronRight className="size-5" />
+            </button>
+        </div>
+
+        <p className={`text-sm text-gray-400 mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+            {T.time_slots_title(T.days_long[selectedDayIndex])}
+        </p>
+
+        {/* Time Slots List */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {TIME_SLOTS.map((hour) => {
+            const isSelected = slots.includes(hour);
+            return (
+              <button
+                key={hour}
+                type="button"
+                onClick={() => toggleSlot(selectedDayIndex, hour)}
+                className={`flex justify-center items-center py-2.5 px-3 rounded-xl border transition-all duration-150 text-sm font-medium ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white border-indigo-700 shadow-md hover:bg-indigo-700'
+                    : 'bg-gray-800 border-gray-700 text-gray-200 hover:bg-gray-700'
+                }`}
+              >
+                {isSelected && <CheckCircle className={`size-4 ${isRTL ? 'ml-2' : 'mr-2'} shrink-0`} />}
+                {formatTime(hour)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Desktop View: Classic Calendar Grid
+  const renderDesktopView = () => (
+    <div className="overflow-x-auto">
+      <div className="min-w-[700px]">
+        <div className="grid gap-x-1.5 gap-y-2" style={{
+          gridTemplateColumns: `auto repeat(${T.days_short.length}, 1fr)`
+        }}>
+          {/* Header Row (Time column + Day names) */}
+          <div className="invisible">Time</div>
+          {T.days_short.map((day, dayIndex) => (
+            <div key={day} className="text-center font-semibold text-base text-indigo-400">
+              {day}
+            </div>
+          ))}
+
+          {/* Time Slots Rows */}
+          {TIME_SLOTS.map((hour, hourIndex) => (
+            <React.Fragment key={hour}>
+              {/* Time Label (first column) */}
+              <div className={`py-2.5 px-2 text-xs font-medium text-gray-400 ${isRTL ? 'text-right' : 'text-left'}`}>
+                {formatTime(hour)}
+              </div>
+              
+              {/* Slot Buttons for each day */}
+              {T.days_long.map((day, dayIndex) => {
+                const dayKey = getDayKey(dayIndex);
+                const isSelected = (availability[dayKey] || []).includes(hour);
+                
+                return (
+                  <button
+                    key={`${dayKey}-${hour}`}
+                    type="button"
+                    onClick={() => toggleSlot(dayIndex, hour)}
+                    className={`h-full w-full rounded-lg border-2 text-xs font-medium transition-all duration-150 py-2.5 ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white border-indigo-700 shadow-md hover:bg-indigo-700'
+                        : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'
+                    }`}
+                    aria-label={`Toggle availability for ${dayKey} at ${formatTime(hour)}`}
+                  >
+                    {isSelected && <CheckCircle className="size-4 mx-auto" />}
+                  </button>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+
+  return (
+    <div className="p-2">
+      {/* Shared Tip */}
+      <p className={`mb-4 text-sm text-gray-400 ${isRTL ? 'text-right' : 'text-left'}`}>
+        <Calendar className={`inline size-4 ${isRTL ? 'ml-2' : 'mr-2'} text-indigo-500`} />
+        <span className="hidden sm:inline">{T.availability_tip}</span>
+        <span className="sm:hidden">{T.mobile_tip}</span>
+      </p>
+
+      {/* Mobile view (sm:hidden) */}
+      <div className="sm:hidden">
+        {renderMobileView()}
+      </div>
+
+      {/* Desktop view (hidden sm:block) */}
+      <div className="hidden sm:block">
+        {renderDesktopView()}
+      </div>
+    </div>
+  );
+};
+
+
+/* ──────────────────────────────────────────────────────────
+   Language Selector Component (Improved UX)
+   ────────────────────────────────────────────────────────── */
+const LanguageSelector = ({ language, setLanguage, isRTL }) => {
+    const languages = [
+        { code: 'fr', flag: '🇫🇷', name: 'Français' },
+        { code: 'en', flag: '🇬🇧', name: 'English' },
+        { code: 'es', flag: '🇪🇸', name: 'Español' },
+        { code: 'ar', flag: '🇲🇦', name: 'العربية' },
+    ];
+
+    return (
+        <div className="inline-flex rounded-xl p-1 bg-gray-800 shadow-xl border border-gray-700">
+            {languages.map((lang) => (
+                <button
+                    key={lang.code}
+                    onClick={() => setLanguage(lang.code)}
+                    className={`text-sm py-2 px-3 rounded-lg font-medium transition-all ${
+                        language === lang.code
+                            ? 'bg-indigo-600 text-white shadow-lg'
+                            : 'bg-transparent text-gray-300 hover:text-white hover:bg-gray-700/50'
+                    }`}
+                >
+                    <span className="text-lg">{lang.flag}</span>
+                    <span className="hidden sm:inline ml-2">{lang.name}</span>
+                </button>
+            ))}
+        </div>
+    );
+};
+
+
+/* ──────────────────────────────────────────────────────────
    APP
    ────────────────────────────────────────────────────────── */
 const App = () => {
-  const [darkMode, setDarkMode] = useState(
-    window.matchMedia("(prefers-color-scheme: dark)").matches
-  );
   const [language, setLanguage] = useState("fr");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    age: "", 
     message: "",
-    pack: PACKS_DATA[0].hours,
+    pack: NEW_PACKS_DATA[0].id,
+    packOption: NEW_PACKS_DATA[0].weekly_options[0].id,
   });
-  const [formStatus, setFormStatus] = useState(null); // "success" | "error" | null
+  const [availability, setAvailability] = useState({}); 
+  const [formStatus, setFormStatus] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ open: false, type: "info", msg: "" });
 
   const T = LANGUAGES[language];
   const isRTL = language === "ar";
+  
+  // Get currently selected pack object
+  const selectedPack = NEW_PACKS_DATA.find(p => p.id === formData.pack);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
+  // Determine if any slot is selected
+  const isAvailabilityValid = useMemo(() => {
+    return Object.values(availability).some(slots => slots.length > 0);
+  }, [availability]);
 
+
+  // Effect to handle RTL and enforce dark mode
   useEffect(() => {
+    document.documentElement.classList.add("dark");
     document.documentElement.setAttribute("dir", isRTL ? "rtl" : "ltr");
     return () => document.documentElement.removeAttribute("dir");
   }, [isRTL]);
 
-  const toggleDarkMode = () => setDarkMode((v) => !v);
-  const handleLanguageChange = (e) => setLanguage(e.target.value);
+  const handleLanguageChange = (code) => setLanguage(code);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
-  const handlePackSelect = (hours) =>
-    setFormData((p) => ({ ...p, pack: hours }));
+  const handlePackSelect = (packId) => {
+    const pack = NEW_PACKS_DATA.find(p => p.id === packId);
+    setFormData((p) => ({ 
+      ...p, 
+      pack: packId,
+      // Select the first option of the new pack by default
+      packOption: pack.weekly_options[0].id 
+    }));
+  };
+
+  const handlePackOptionSelect = (optionId) => {
+    setFormData((p) => ({ ...p, packOption: optionId }));
+  };
 
   const handlePhoneChange = (e) => {
     let value = e.target.value.trim();
@@ -276,47 +491,107 @@ const App = () => {
     () => formData.phone === "" || validatePhoneNumber(formData.phone),
     [formData.phone]
   );
-
-  const words = useMemo(() => countWords(formData.message), [formData.message]);
-  const messageOK = words <= 100;
+  
+  const isAgeValid = useMemo(
+    () => formData.age === "" || validateAge(formData.age),
+    [formData.age]
+  );
 
   const showToast = (type, msg) => {
     setToast({ open: true, type, msg });
     setTimeout(() => setToast((t) => ({ ...t, open: false })), 4000);
   };
+  
+  // Find the text for the selected pack option
+  const selectedPackOptionText = useMemo(() => {
+    const pack = NEW_PACKS_DATA.find(p => p.id === formData.pack);
+    if (!pack) return 'N/A';
+    const option = pack.weekly_options.find(opt => opt.id === formData.packOption);
+    const langKey = language === 'fr' ? 'fr' : language === 'es' ? 'es' : language === 'ar' ? 'ar' : 'en';
+    return option ? option[`text_${langKey}`] : 'N/A';
+  }, [formData.pack, formData.packOption, language]);
+  
+  // Combine availability data into a readable string for the payload
+  const formattedAvailability = useMemo(() => {
+    const availableDays = Object.entries(availability)
+      .filter(([, slots]) => slots.length > 0)
+      .map(([day, slots]) => {
+        const sortedSlots = slots.sort((a, b) => a - b);
+        const timeRanges = sortedSlots.map(formatTime);
+        return `${day}: ${timeRanges.join(' | ')}`;
+      });
+    return availableDays.join(' || ');
+  }, [availability]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!messageOK) {
-      setFormStatus("error");
-      showToast("error", T.message_too_long);
-      return;
-    }
-    if (!isPhoneValid || formData.name.trim() === "") {
+    if (!isPhoneValid || formData.name.trim() === "" || !isAgeValid) {
       setFormStatus("error");
       showToast("error", T.error_msg);
+      return;
+    }
+    
+    if (!formData.packOption) {
+      setFormStatus("error");
+      showToast("error", T.error_pack_option);
+      return;
+    }
+
+    if (!isAvailabilityValid) {
+      setFormStatus("error");
+      showToast("error", T.no_slot_selected);
       return;
     }
 
     setLoading(true);
     try {
-      // If backend runs on same domain behind a reverse proxy, use relative path:
-      // const API_URL = "/api/contact";
-      const API_URL =
-        "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact"; // dev
+      // Structure the data for Discord
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        age: formData.age,
+        language: language.toUpperCase(),
+        pack_name: selectedPack.name,
+        pack_price_per_hour: `${selectedPack.price_per_hour} MAD/h`,
+        pack_option_selected: selectedPackOptionText,
+        availability_summary: formattedAvailability,
+        message: formData.message || "N/A",
+      };
+      
+      // DISCORD MESSAGE FORMATTING (as a simple string for the backend to handle)
+      const discordMessage = `
+        **✨ NOUVELLE DEMANDE DE CONTACT (Improglish) ✨**
+        
+        **👤 CLIENT INFO**
+        > **Nom:** ${payload.name}
+        > **Âge:** ${payload.age} ans
+        > **Téléphone:** ${payload.phone}
+        > **Langue UI:** ${payload.language}
 
+        **💰 PACK CHOISI**
+        > **Nom du Pack:** ${payload.pack_name}
+        > **Prix Horaire:** ${payload.pack_price_per_hour}
+        > **Option Choisi:** ${payload.pack_option_selected}
+
+        **🗓️ DISPONIBILITÉS (HEURES LOCALES)**
+        ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')}
+
+        **📝 OBJECTIFS/MESSAGE**
+        > ${payload.message.replace(/\n/g, '\n> ')}
+      `.trim();
+      
+      // Sending the structured data and the formatted message
       const res = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-secret": "super-long-random-string",
         },
-        body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone,
-          pack: formData.pack,
-          message: formData.message || "",
+        body: JSON.stringify({ 
+          ...payload,
+          discord_message: discordMessage 
         }),
       });
 
@@ -324,9 +599,19 @@ const App = () => {
 
       setFormStatus("success");
       showToast("success", T.success_msg);
-      setFormData((p) => ({ ...p, name: "", phone: "", message: "" }));
+      // Reset form fields after successful submission
+      setFormData({
+        name: "",
+        phone: "",
+        age: "",
+        message: "",
+        pack: NEW_PACKS_DATA[0].id,
+        packOption: NEW_PACKS_DATA[0].weekly_options[0].id,
+      });
+      setAvailability({});
+      
     } catch (err) {
-      console.error(err);
+      console.error("Submission Error:", err);
       setFormStatus("error");
       showToast("error", T.error_msg);
     } finally {
@@ -336,58 +621,31 @@ const App = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 antialiased ${isRTL ? "font-[system-ui]" : ""}`}>
+    // Permanent Dark Mode enforced here
+    <div className={`min-h-screen bg-gray-950 text-gray-100 antialiased ${isRTL ? "font-[system-ui] rtl" : "ltr"}`}>
       {/* Top Gradient Accent */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-indigo-500/15 to-transparent dark:from-indigo-400/10" />
+      <div className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-gradient-to-b from-indigo-500/10 to-transparent" />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-white/60 bg-white/70 dark:bg-gray-950/60 border-b border-gray-200/60 dark:border-gray-800">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-20 backdrop-blur-sm bg-gray-950/80 border-b border-gray-800">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-20 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2 min-w-0">
-            {/* Logo.jpeg (fits nicely) */}
-            <div className="h-9 w-9 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white grid place-items-center shrink-0">
-              <img
-                src="/logo.jpeg"
-                alt="Improglish logo"
-                className="h-full w-full object-contain"
-                loading="eager"
-                decoding="async"
-              />
+            <div className="h-10 w-10 rounded-xl overflow-hidden border border-gray-700 bg-gray-900 grid place-items-center shrink-0 text-xl font-bold text-indigo-400">
+              <Zap className="size-5" />
             </div>
-            <span className="text-xl font-extrabold tracking-tight truncate">
+            <span className="text-2xl font-extrabold tracking-tight truncate">
               {T.brand}
             </span>
           </a>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Language */}
-            <div className="relative">
-              <select
-                value={language}
-                onChange={handleLanguageChange}
-                className="appearance-none bg-transparent text-sm px-3 py-2 pr-8 rounded-lg border border-gray-300/70 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-800/60 transition"
-              >
-                <option value="fr">🇫🇷 Français</option>
-                <option value="en">🇺🇸 English</option>
-                <option value="es">🇪🇸 Español</option>
-                <option value="ar">🇸🇦 العربية</option>
-              </select>
-              <Globe className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 size-4 text-gray-500" />
-            </div>
+            {/* Language Selector */}
+            <LanguageSelector language={language} setLanguage={handleLanguageChange} isRTL={isRTL} />
 
-            {/* Dark mode */}
-            <button
-              onClick={toggleDarkMode}
-              aria-label="Toggle dark mode"
-              className="inline-flex items-center justify-center size-10 rounded-lg border border-gray-300/70 dark:border-gray-700 hover:bg-gray-100/60 dark:hover:bg-gray-800/60 transition"
-            >
-              {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
-            </button>
-
-            {/* CTA */}
+            {/* CTA (Hidden on mobile, uses fixed button instead) */}
             <a
               href="#contact"
-              className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-indigo-600 text-white font-medium shadow-sm hover:shadow transition active:scale-[0.99]"
+              className="hidden sm:inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-indigo-600 text-white font-medium shadow-lg hover:shadow-xl transition active:scale-[0.99] border border-indigo-500"
             >
               {T.contact_btn}
             </a>
@@ -398,231 +656,207 @@ const App = () => {
       {/* MAIN */}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {/* HERO */}
-        <section className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 sm:p-10 shadow-sm">
+        <section className="relative overflow-hidden rounded-3xl border border-gray-800 bg-gray-900 p-6 sm:p-10 shadow-2xl">
           <div className="absolute -right-24 -top-24 size-72 rounded-full bg-indigo-500/10 blur-3xl" />
           <div className="absolute -left-24 -bottom-24 size-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-          <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight">
+          <h1 className="text-3xl sm:text-5xl font-extrabold leading-tight tracking-tight text-white">
             {T.hero_title}
           </h1>
           <p
-            className={`mt-3 sm:mt-4 text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl ${
+            className={`mt-3 sm:mt-4 text-base sm:text-xl text-gray-400 max-w-3xl ${
               isRTL ? "text-right ml-auto" : ""
             }`}
           >
             {T.hero_sub}
           </p>
-
-          <div className="mt-6 sm:mt-8">
-            <a
-              href="#packs"
-              className="inline-flex items-center gap-2 rounded-xl px-5 py-3 bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 transition will-change-transform hover:scale-[1.01]"
-            >
-              {T.discover_packs_btn}
-            </a>
-          </div>
         </section>
-
-        {/* PACKS + FEATURES */}
-        <section id="packs" className="mt-10 sm:mt-14">
-          <h2 className="text-2xl sm:text-4xl font-bold text-center">
-            {T.packs_title}
-          </h2>
-
-          <div className="mt-6 sm:mt-8 grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-10">
-            {/* Pricing cards */}
-            <div className="space-y-3 sm:space-y-4">
-              {PACKS_DATA.map((pack) => {
-                const selected = formData.pack === pack.hours;
-                return (
-                  <button
-                    key={pack.hours}
-                    type="button"
-                    onClick={() => handlePackSelect(pack.hours)}
-                    className={`w-full text-left rounded-2xl border p-4 sm:p-5 transition shadow-sm hover:shadow ${
-                      selected
-                        ? "border-indigo-600/70 bg-indigo-50/70 dark:bg-indigo-950/40 dark:border-indigo-400 ring-2 ring-indigo-500/30"
-                        : "border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-indigo-400/60"
-                    }`}
-                  >
-                    <div
-                      className={`flex items-center ${
-                        isRTL ? "flex-row-reverse justify-between" : "justify-between"
-                      }`}
-                    >
-                      <p className="text-lg sm:text-xl font-semibold">
-                        <Clock
-                          className={`inline size-5 ${
-                            isRTL ? "ml-2" : "mr-2"
-                          } text-indigo-500`}
-                        />
-                        {T.pack_hours(pack.hours)}
-                      </p>
-                      <p className="text-xl sm:text-2xl font-extrabold text-indigo-600 dark:text-indigo-300">
-                        {pack.price} dh
-                      </p>
-                    </div>
-                    <p
-                      className={`mt-1 text-sm text-gray-600 dark:text-gray-400 ${
-                        isRTL ? "text-right" : ""
-                      }`}
-                    >
-                      {T.pack_weekly(pack.weekly)}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Features */}
-            <div className="lg:col-span-2 rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 sm:p-8 shadow-sm">
-              <h3
-                className={`text-xl sm:text-2xl font-semibold mb-4 sm:mb-5 flex items-center ${
-                  isRTL ? "flex-row-reverse justify-end" : ""
-                }`}
-              >
-                <BookOpen
-                  className={`size-6 text-indigo-600 ${
-                    isRTL ? "ml-3" : "mr-3"
-                  }`}
-                />
-                {T.features_title}
-              </h3>
-              <ul className="space-y-3 sm:space-y-4 text-base sm:text-lg">
-                {[T.f1, T.f2, T.f3, T.f4, T.f5].map((feature, i) => (
-                  <li
-                    key={i}
-                    className={`flex items-start ${isRTL ? "flex-row-reverse" : ""}`}
-                  >
-                    <CheckCircle
-                      className={`size-6 text-green-500 ${
-                        isRTL ? "ml-3" : "mr-3"
-                      } mt-1 shrink-0`}
-                    />
-                    <p
-                      className={`${isRTL ? "text-right" : ""}`}
-                      dangerouslySetInnerHTML={{
-                        __html: feature.replace(
-                          "100%",
-                          `<strong class="font-semibold text-gray-900 dark:text-gray-100">100%</strong>`
-                        ),
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* CONTACT */}
+        
+        {/* CONTACT FORM (Unified Section) */}
         <section id="contact" className="mt-12 sm:mt-16">
-          <div className="mx-auto max-w-3xl rounded-2xl border border-gray-200/70 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 sm:p-8 shadow-sm">
-            <h2 className="text-2xl sm:text-4xl font-bold text-center">
-              {T.contact_title}
+          <div className="mx-auto max-w-4xl rounded-3xl border border-gray-800 bg-gray-900 p-5 sm:p-10 shadow-3xl">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10 text-indigo-400">
+              {T.contact_btn}
             </h2>
-            <p className="mt-2 text-center text-gray-600 dark:text-gray-300">
-              {T.contact_sub}
-            </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 space-y-5 sm:space-y-6">
-              {/* Name */}
+            <form onSubmit={handleSubmit} className="space-y-10">
+              
+              {/* SECTION 1: PACK SELECTION */}
               <div>
-                <label
-                  htmlFor="name"
-                  className={`block text-sm font-medium mb-1 ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                >
-                  {T.name_label}
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  placeholder={T.name_label}
-                  className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                />
+                <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-700 ${isRTL ? 'text-right' : ''}`}>
+                  {T.packs_title}
+                </h3>
+                
+                <div className="grid md:grid-cols-5 sm:grid-cols-3 grid-cols-2 gap-4">
+                  {NEW_PACKS_DATA.map((pack) => {
+                    const selected = formData.pack === pack.id;
+                    const packDescription = pack[`description_${language === 'fr' ? 'fr' : language === 'es' ? 'es' : language === 'ar' ? 'ar' : 'en'}`];
+
+                    return (
+                      <div 
+                        key={pack.id} 
+                        className={`col-span-1 p-3 rounded-xl border-2 transition-all cursor-pointer shadow-md ${
+                          selected
+                            ? "border-indigo-600 bg-indigo-950/50 ring-2 ring-indigo-500/50"
+                            : "border-gray-700 bg-gray-800 hover:border-indigo-500/50"
+                        }`}
+                        onClick={() => handlePackSelect(pack.id)}
+                      >
+                        <div className="text-center">
+                          <p className="text-base font-bold text-white">
+                            {pack.name}
+                          </p>
+                          <p className="mt-1 text-2xl font-extrabold text-indigo-400">
+                            {T.pack_price_per_hour(pack.price_per_hour)}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            {T.pack_example_price(getTotalPrice(pack.price_per_hour))}
+                          </p>
+                          {selected && (
+                            <p className="mt-2 text-xs text-gray-400 p-1 border-t border-gray-700">
+                              {packDescription}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Pack Consumption Options */}
+                {selectedPack && (
+                  <div className="mt-6 p-5 rounded-xl bg-gray-800 border border-gray-700">
+                    <p className={`font-semibold mb-3 text-indigo-400 ${isRTL ? 'text-right' : ''}`}>
+                      <Clock className={`inline size-4 ${isRTL ? 'ml-2' : 'mr-2'} text-indigo-500`} />
+                      {T.pack_select_option}
+                    </p>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {selectedPack.weekly_options.map(option => {
+                        const langKey = language === 'fr' ? 'fr' : language === 'es' ? 'es' : language === 'ar' ? 'ar' : 'en';
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => handlePackOptionSelect(option.id)}
+                            className={`w-full p-3 text-sm rounded-xl border transition-all shadow-sm ${
+                              formData.packOption === option.id
+                                ? "border-green-600 bg-green-900/60 text-green-300 font-semibold ring-1 ring-green-500"
+                                : "border-gray-700 bg-gray-900 hover:bg-gray-700 text-gray-300"
+                            }`}
+                          >
+                            {option[`text_${langKey}`]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Phone */}
+              {/* SECTION 2: PROFILE & CONTACT */}
               <div>
-                <label
-                  htmlFor="phone"
-                  className={`block text-sm font-medium mb-1 ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                >
-                  {T.phone_label}
-                </label>
-                <div className="flex rounded-xl overflow-hidden border border-gray-300 dark:border-gray-700">
-                  <span className="inline-flex items-center px-3 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
-                    <Phone className="size-4" />
-                  </span>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handlePhoneChange}
-                    required
-                    placeholder={T.phone_placeholder}
-                    className={`flex-1 min-w-0 px-4 py-2.5 bg-white dark:bg-gray-900 outline-none ${
-                      isRTL ? "text-right" : ""
-                    } ${!isPhoneValid ? "ring-2 ring-red-500" : ""}`}
-                  />
+                <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-700 ${isRTL ? 'text-right' : ''}`}>
+                  {T.section_profile}
+                </h3>
+                <div className="grid sm:grid-cols-2 gap-5">
+                  {/* Name */}
+                  <div>
+                    <label htmlFor="name" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
+                      {T.name_label}
+                    </label>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      placeholder={T.name_label}
+                      className={`w-full rounded-xl border border-gray-700 bg-gray-800 text-white px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${isRTL ? "text-right" : ""}`}
+                    />
+                  </div>
+
+                  {/* Age */}
+                  <div>
+                    <label htmlFor="age" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
+                      {T.age_label}
+                    </label>
+                    <div className="flex rounded-xl overflow-hidden border border-gray-700">
+                      <span className="inline-flex items-center px-3 bg-gray-700 text-gray-400">
+                        <User className="size-4" />
+                      </span>
+                      <input
+                        id="age"
+                        name="age"
+                        type="number"
+                        min="10"
+                        max="99"
+                        value={formData.age}
+                        onChange={handleChange}
+                        required
+                        placeholder={T.age_placeholder}
+                        className={`flex-1 min-w-0 px-4 py-2.5 bg-gray-800 text-white outline-none ${isRTL ? "text-right" : ""} ${!isAgeValid && formData.age !== "" ? "ring-2 ring-red-500" : ""}`}
+                      />
+                    </div>
+                    {!isAgeValid && formData.age !== "" && (
+                      <p className={`mt-2 text-xs text-red-400 ${isRTL ? "text-right" : ""}`}>
+                        {T.age_error}
+                      </p>
+                    )}
+                  </div>
+                  
+                  {/* Phone (full width on small screens) */}
+                  <div className="sm:col-span-2">
+                    <label htmlFor="phone" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
+                      {T.phone_label}
+                    </label>
+                    <div className="flex rounded-xl overflow-hidden border border-gray-700">
+                      <span className="inline-flex items-center px-3 bg-gray-700 text-gray-400">
+                        <Phone className="size-4" />
+                      </span>
+                      <input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handlePhoneChange}
+                        required
+                        placeholder={T.phone_placeholder}
+                        className={`flex-1 min-w-0 px-4 py-2.5 bg-gray-800 text-white outline-none ${isRTL ? "text-right" : ""} ${!isPhoneValid && formData.phone !== "" ? "ring-2 ring-red-500" : ""}`}
+                      />
+                    </div>
+                    {!isPhoneValid && formData.phone !== "" && (
+                      <p className={`mt-2 text-xs text-red-400 ${isRTL ? "text-right" : ""}`}>
+                        {T.error_phone}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {!isPhoneValid && (
-                  <p
-                    className={`mt-2 text-sm text-red-600 dark:text-red-400 ${
-                      isRTL ? "text-right" : ""
-                    }`}
-                  >
-                    {T.error_phone}
+              </div>
+
+              {/* SECTION 3: AVAILABILITY (The improved part) */}
+              <div>
+                <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-700 ${isRTL ? 'text-right' : ''}`}>
+                  {T.section_availability}
+                </h3>
+                <SchedulePicker 
+                  T={T} 
+                  language={language}
+                  availability={availability} 
+                  setAvailability={setAvailability} 
+                  isRTL={isRTL}
+                />
+                
+                {!isAvailabilityValid && formStatus === 'error' && (
+                  <p className={`mt-4 text-sm text-red-400 text-center`}>
+                    {T.no_slot_selected}
                   </p>
                 )}
               </div>
 
-              {/* Pack */}
+              {/* MESSAGE (GOALS) */}
               <div>
-                <label
-                  htmlFor="pack"
-                  className={`block text-sm font-medium mb-1 ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                >
-                  {T.pack_label}
-                </label>
-                <select
-                  id="pack"
-                  name="pack"
-                  value={formData.pack}
-                  onChange={handleChange}
-                  className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                >
-                  {PACKS_DATA.map((p) => (
-                    <option key={p.hours} value={p.hours}>
-                      {T.pack_option(p.hours, p.weekly, p.price)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Message (≤100 words) */}
-              <div>
-                <label
-                  htmlFor="message"
-                  className={`block text-sm font-medium mb-1 ${
-                    isRTL ? "text-right" : ""
-                  }`}
-                >
+                <label htmlFor="message" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                   {T.message_label}
                 </label>
                 <textarea
@@ -632,21 +866,15 @@ const App = () => {
                   value={formData.message}
                   onChange={handleChange}
                   placeholder={T.message_placeholder}
-                  className={`w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${
-                    isRTL ? "text-right" : ""
-                  } ${!messageOK ? "ring-2 ring-red-500" : ""}`}
+                  className={`w-full rounded-xl border border-gray-700 bg-gray-800 text-white px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 transition ${isRTL ? "text-right" : ""}`}
                 />
-                <div className={`mt-1 text-xs sm:text-sm ${!messageOK ? "text-red-600 dark:text-red-400" : "text-gray-500"}`}>
-                  {T.message_words_left(`${words}`)}
-                  {!messageOK && ` • ${T.message_too_long}`}
-                </div>
               </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading || !isPhoneValid || formData.name.trim() === ""}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-indigo-600 text-white font-semibold shadow-sm hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={loading || !isPhoneValid || formData.name.trim() === "" || !isAgeValid || !formData.packOption || !isAvailabilityValid}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 bg-indigo-600 text-white font-semibold shadow-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] border border-indigo-500"
               >
                 {loading ? (
                   <>
@@ -661,14 +889,14 @@ const App = () => {
                 )}
               </button>
 
-              {/* Status (still keep inline blocks) */}
+              {/* Status */}
               {formStatus === "success" && (
-                <div className="rounded-xl border border-green-500/40 bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 px-4 py-3 text-center">
+                <div className="rounded-xl border border-green-500/40 bg-green-900/40 text-green-300 px-4 py-3 text-center mt-5">
                   {T.success_msg}
                 </div>
               )}
               {formStatus === "error" && (
-                <div className="rounded-xl border border-red-500/40 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 px-4 py-3 text-center">
+                <div className="rounded-xl border border-red-500/40 bg-red-900/40 text-red-300 px-4 py-3 text-center mt-5">
                   {T.error_msg}
                 </div>
               )}
@@ -677,8 +905,18 @@ const App = () => {
         </section>
       </main>
 
+      {/* Fixed Mobile CTA Button */}
+      <a 
+        href="#contact" 
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm sm:hidden inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 bg-indigo-600 text-white font-semibold shadow-2xl shadow-indigo-500/50 hover:bg-indigo-700 transition z-10"
+      >
+        <Send className="size-5" />
+        {T.contact_btn}
+      </a>
+
+
       {/* FOOTER */}
-      <footer className="mt-10 sm:mt-12 border-t border-gray-200/70 dark:border-gray-800">
+      <footer className="mt-10 sm:mt-12 border-t border-gray-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 text-center text-xs sm:text-sm text-gray-500">
           © {new Date().getFullYear()} {T.brand}. {T.footer_text}
         </div>
@@ -689,6 +927,7 @@ const App = () => {
         open={toast.open}
         type={toast.type}
         onClose={() => setToast((t) => ({ ...t, open: false }))}
+        isRTL={isRTL}
       >
         {toast.msg}
       </Toast>
