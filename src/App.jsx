@@ -18,52 +18,63 @@ import {
    DATA & TRANSLATIONS
    ────────────────────────────────────────────────────────── */
 
-// Helper to calculate total price for a standardized 8-hour pack for display purposes
-const getTotalPrice = (hourlyRate) => (hourlyRate * 8).toFixed(0);
-
-// Updated packs data with consumption options moved into the main object for display
+// NOTE: The previous function `getTotalPrice` is removed as the total price is now
+// explicitly defined in the data structure below.
 const NEW_PACKS_DATA = [
   {
     id: 'TOP',
     name: "Top pack",
+    total_price: 2000,
+    total_hours: 24,
     price_per_hour: 83,
     consumption_options: [
       { id: '2h_3m', text_fr: "2h / semaine (3 mois)", text_en: "2h / week (3 months)", text_es: "2h / semana (3 meses)", text_ar: "2 ساعة / أسبوع (3 أشهر)" },
-      { id: '3h_2m', text_fr: "3h / semaine (2 mois)", text_en: "3h / week (2 months)", text_es: "3h / semana (2 meses)", text_ar: "3 ساعة / أسبوع (2 شهر)" }
-    ],
-  },
-  {
-    id: 'PREMIUM',
-    name: "Premium pack",
-    price_per_hour: 87.5,
-    consumption_options: [
-      { id: '2h_2m', text_fr: "2h / semaine (2 mois)", text_en: "2h / week (2 months)", text_es: "2h / semana (2 meses)", text_ar: "2 ساعة / أسبوع (2 شهر)" },
-      { id: '1h_4m', text_fr: "1h / semaine (4 mois)", text_en: "1h / week (4 months)", text_es: "1h / semana (4 meses)", text_ar: "1 ساعة / أسبوع (4 أشهر)" }
+      { id: '3h_2m', text_fr: "3h / semaine (2 mois)", text_en: "3h / week (2 months)", text_es: "3h / semana (2 months)", text_ar: "3 ساعة / أسبوع (2 شهر)" },
+      { id: '6h_1m', text_fr: "6h / semaine (1 mois)", text_en: "6h / week (1 month)", text_es: "6h / semana (1 mes)", text_ar: "6 ساعة / أسبوع (1 شهر)" },
     ],
   },
   {
     id: 'ADVANCED',
     name: "Advanced pack",
+    total_price: 1700,
+    total_hours: 20,
     price_per_hour: 85,
     consumption_options: [
       { id: '2h_2_5m', text_fr: "2h / semaine (2.5 mois)", text_en: "2h / week (2.5 months)", text_es: "2h / semana (2.5 meses)", text_ar: "2 ساعة / أسبوع (2.5 شهر)" },
-      { id: '4h_1m', text_fr: "4h / semaine (1 mois)", text_en: "4h / week (1 month)", text_es: "4h / semana (1 mes)", text_ar: "4 ساعة / أسبوع (1 شهر)" }
+      { id: '5h_1m', text_fr: "5h / semaine (1 mois)", text_en: "5h / week (1 month)", text_es: "5h / semana (1 mes)", text_ar: "5 ساعة / أسبوع (1 شهر)" },
+    ],
+  },
+  {
+    id: 'PREMIUM',
+    name: "Premium pack",
+    total_price: 1400,
+    total_hours: 16,
+    price_per_hour: 87.5,
+    consumption_options: [
+      { id: '2h_2m', text_fr: "2h / semaine (2 mois)", text_en: "2h / week (2 months)", text_es: "2h / semana (2 meses)", text_ar: "2 ساعة / أسبوع (2 شهر)" },
+      { id: '4h_1m', text_fr: "4h / semaine (1 mois)", text_en: "4h / week (1 month)", text_es: "4h / semana (1 mes)", text_ar: "4 ساعة / أسبوع (1 شهر)" },
     ],
   },
   {
     id: 'STANDARD',
     name: "Standard plan",
+    total_price: 1100,
+    total_hours: 12,
     price_per_hour: 91,
     consumption_options: [
-      { id: '1h_3m', text_fr: "1h / semaine (3 mois)", text_en: "1h / week (3 months)", text_es: "1h / semana (3 meses)", text_ar: "1 ساعة / أسبوع (3 أشهر)" }
+      { id: '1h_3m', text_fr: "1h / semaine (3 mois)", text_en: "1h / week (3 months)", text_es: "1h / semana (3 meses)", text_ar: "1 ساعة / أسبوع (3 أشهر)" },
+      { id: '3h_1m', text_fr: "3h / semaine (1 mois)", text_en: "3h / week (1 month)", text_es: "3h / semana (1 mes)", text_ar: "3 ساعة / أسبوع (1 شهر)" },
     ],
   },
   {
     id: 'BASIC',
     name: "Basic plan",
+    total_price: 800,
+    total_hours: 8,
     price_per_hour: 100,
     consumption_options: [
-      { id: '1h_2m', text_fr: "1h / semaine (2 mois)", text_en: "1h / week (2 months)", text_es: "1h / semana (2 months)", text_ar: "1 ساعة / أسبوع (2 شهر)" }
+      { id: '1h_2m', text_fr: "1h / semaine (2 mois)", text_en: "1h / week (2 months)", text_es: "1h / semana (2 meses)", text_ar: "1 ساعة / أسبوع (2 شهر)" },
+      { id: '2h_1m', text_fr: "2h / semaine (1 mois)", text_en: "2h / week (1 month)", text_es: "2h / semana (1 mes)", text_ar: "2 ساعة / أسبوع (1 شهر)" },
     ],
   },
 ];
@@ -94,8 +105,9 @@ const LANGUAGES = {
     brand: "improglish", contact_btn: "Contactez-nous", hero_title: "Prêt(e) à booster ton niveau de langue ?", hero_sub: "Des packs flexibles, adaptés à ton rythme 🤍",
     packs_title: "1. Choisissez votre Pack", 
     pack_price_per_hour: (price) => `${price} MAD/h`, // Smaller text: Hourly rate
-    pack_total_price: (price) => `${price} MAD`,       // Bigger text: Total price (8h example)
-    pack_total_label: "Ex. 8h pour", // Label before the total price
+    pack_total_price: (price) => `${price} MAD`,       // Bigger text: Total price
+    pack_total_label: (hours) => `${hours}h pour`, // Label before the total price (E.g., 24h pour)
+    pack_hourly_label: "Coût horaire :", // New label for hourly rate
     pack_select_option: "Choisissez votre rythme de consommation :",
     section_profile: "2. Votre Profil et Contact", section_availability: "3. Vos Disponibilités (Heures/Jours)",
     name_label: "Nom complet", phone_label: "Numéro de téléphone", phone_placeholder: "+212 6 XX XX XX XX (avec indicatif)",
@@ -114,8 +126,9 @@ const LANGUAGES = {
     brand: "improglish", contact_btn: "Contact Us", hero_title: "Ready to boost your language skills?", hero_sub: "Flexible packages at your pace 🤍",
     packs_title: "1. Choose Your Package", 
     pack_price_per_hour: (price) => `${price} MAD/h`, // Smaller text: Hourly rate
-    pack_total_price: (price) => `${price} MAD`,       // Bigger text: Total price (8h example)
-    pack_total_label: "E.g. 8h for",
+    pack_total_price: (price) => `${price} MAD`,       // Bigger text: Total price
+    pack_total_label: (hours) => `${hours}h for`,
+    pack_hourly_label: "Cost per hour:",
     pack_select_option: "Choose your consumption rhythm:",
     section_profile: "2. Your Profile and Contact", section_availability: "3. Your Availability (Time Slots)",
     name_label: "Full Name", phone_label: "Phone Number", phone_placeholder: "+212 6 XX XX XX XX (with country code)",
@@ -135,7 +148,8 @@ const LANGUAGES = {
     packs_title: "1. Elige tu Paquete", 
     pack_price_per_hour: (price) => `${price} MAD/h`,
     pack_total_price: (price) => `${price} MAD`,
-    pack_total_label: "Ej. 8h por",
+    pack_total_label: (hours) => `${hours}h por`,
+    pack_hourly_label: "Costo por hora:",
     pack_select_option: "Elige tu ritmo de consumo:",
     section_profile: "2. Tu Perfil y Contacto", section_availability: "3. Tu Disponibilidad (Horarios/Días)",
     name_label: "Nombre completo", phone_label: "Número de teléfono", phone_placeholder: "+212 6 XX XX XX XX (con código de país)",
@@ -155,7 +169,8 @@ const LANGUAGES = {
     packs_title: "1. اختر باقتك", 
     pack_price_per_hour: (price) => `${price} درهم/ساعة`,
     pack_total_price: (price) => `${price} درهم`,
-    pack_total_label: "مثال 8 ساعات مقابل",
+    pack_total_label: (hours) => `${hours} ساعة مقابل`,
+    pack_hourly_label: "تكلفة الساعة:",
     pack_select_option: "اختر وتيرة الاستهلاك الخاصة بك:",
     section_profile: "2. ملفك الشخصي وجهة الاتصال", section_availability: "3. أوقات فراغك (الساعات/الأيام)",
     name_label: "الاسم الكامل", phone_label: "رقم الهاتف", phone_placeholder: "+212 6 XX XX XX XX (مع رمز البلد)",
@@ -429,8 +444,10 @@ const App = () => {
     phone: "",
     age: "", 
     message: "",
+    // Default to the first pack (Top pack)
     pack: NEW_PACKS_DATA[0].id,
-    packOption: NEW_PACKS_DATA[0].consumption_options[0].id, // Use the first option by default
+    // Default to the first option of the first pack
+    packOption: NEW_PACKS_DATA[0].consumption_options[0].id, 
   });
   const [availability, setAvailability] = useState({}); 
   const [formStatus, setFormStatus] = useState(null); 
@@ -581,6 +598,9 @@ const App = () => {
         age: parsedAge,       // PARSED age as integer
         language: language.toUpperCase(),
         pack_name: selectedPack.name,
+        // Using the new explicit fields
+        pack_total_price: `${selectedPack.total_price} MAD`,
+        pack_total_hours: `${selectedPack.total_hours} hours`,
         pack_price_per_hour: `${selectedPack.price_per_hour} MAD/h`,
         pack_option_selected: selectedPackOptionText,
         availability_summary: formattedAvailability,
@@ -599,6 +619,8 @@ const App = () => {
 
         **💰 PACK CHOISI**
         > **Nom du Pack:** ${payload.pack_name}
+        > **Prix Total:** ${payload.pack_total_price}
+        > **Heures Totales:** ${payload.pack_total_hours}
         > **Prix Horaire:** ${payload.pack_price_per_hour}
         > **Option Choisi:** ${payload.pack_option_selected}
 
@@ -656,7 +678,7 @@ const App = () => {
       {/* NAVBAR - Adjusted for light mode */}
       <header className="sticky top-0 z-20 backdrop-blur-sm bg-white/80 border-b border-gray-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 h-20 flex items-center justify-between">
-          <a href="logo.jpeg" className="flex items-center gap-2 min-w-0">
+          <a href="#" className="flex items-center gap-2 min-w-0">
             <div className="h-10 w-10 rounded-xl overflow-hidden border border-blue-400 bg-blue-50 grid place-items-center shrink-0 text-xl font-bold text-blue-600">
               <img src="logo.jpeg" alt="" />
             </div>
@@ -715,11 +737,10 @@ const App = () => {
                 </h3>
                 
                 <div className="relative">
-                    {/* Carousel Controls - NOW VISIBLE ON MOBILE */}
+                    {/* Carousel Controls */}
                     <button
                         type="button"
                         onClick={() => scrollPacks('left')}
-                        // Removed 'hidden sm:block' - adjusted padding and icon size for mobile fit
                         className={`absolute top-1/2 -mt-[120px] ${isRTL ? 'right-0' : '-left-2'} z-10 p-1 rounded-full bg-white/90 shadow-lg border border-gray-300 backdrop-blur-sm hover:bg-white transition`}
                         aria-label="Scroll left"
                     >
@@ -728,7 +749,6 @@ const App = () => {
                     <button
                         type="button"
                         onClick={() => scrollPacks('right')}
-                        // Removed 'hidden sm:block' - adjusted padding and icon size for mobile fit
                         className={`absolute top-1/2 -mt-[120px] ${isRTL ? '-left-2' : 'right-0'} z-10 p-1 rounded-full bg-white/90 shadow-lg border border-gray-300 backdrop-blur-sm hover:bg-white transition`}
                         aria-label="Scroll right"
                     >
@@ -744,9 +764,7 @@ const App = () => {
                     >
                       {NEW_PACKS_DATA.map((pack) => {
                         const selected = formData.pack === pack.id;
-                        const totalPrice = getTotalPrice(pack.price_per_hour);
                         const langKey = language === 'fr' ? 'fr' : language === 'es' ? 'es' : language === 'ar' ? 'ar' : 'en';
-
 
                         return (
                           <div 
@@ -766,18 +784,20 @@ const App = () => {
                               
                               {/* BIGGER: Total Price */}
                               <div className="flex items-end justify-center my-3">
-                                
+                              
                                 <p className="text-5xl font-extrabold text-blue-600 leading-none">
-                                  {T.pack_total_price(totalPrice)}
+                                  {T.pack_total_price(pack.total_price)}
                                 </p>
                               </div>
 
-                              {/* SMALLER: Consumption Details - Hourly Rate */}
+                              {/* SMALLER: Consumption Details - Total Hours & Price */}
                               <p className="text-sm text-gray-500 font-medium">
-                                {T.pack_total_label} <span className="font-semibold">{T.pack_total_price(totalPrice)}</span>
+                                {/* Now uses pack.total_hours */}
+                                {T.pack_total_label(pack.total_hours)} <span className="font-semibold">{T.pack_total_price(pack.total_price)}</span>
                               </p>
                               <p className="text-xs text-gray-500 mt-1">
-                                Soit {T.pack_price_per_hour(pack.price_per_hour)}
+                                {/* New label for clarity */}
+                                {T.pack_hourly_label} <span className="font-semibold">{T.pack_price_per_hour(pack.price_per_hour)}</span>
                               </p>
 
                               <div className="mt-5 pt-4 border-t border-gray-200">
