@@ -484,7 +484,7 @@ const LanguageSelector = ({ language, setLanguage }) => {
 };
 
 /* ──────────────────────────────────────────────────────────
-   CountryPicker + PhoneInput (new)
+   CountryPicker + PhoneInput
    ────────────────────────────────────────────────────────── */
 function CountryPicker({ T, countries, selected, onSelect, isRTL }) {
   const [open, setOpen] = useState(false);
@@ -500,13 +500,11 @@ function CountryPicker({ T, countries, selected, onSelect, isRTL }) {
     );
   }, [countries, query]);
 
-  // **FIX: Changed styling on the button to be border-less on the right side**
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        // FIX: Removed w-40, border, and rounded-l-xl. Added border-r to create separation.
         className={`h-full flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 border-r border-gray-300 ${isRTL ? 'rounded-r-xl' : 'rounded-l-xl'} transition`}
       >
         <span className="flex items-center gap-2 truncate">
@@ -517,9 +515,7 @@ function CountryPicker({ T, countries, selected, onSelect, isRTL }) {
       </button>
 
       {open && (
-        // In CountryPicker (the dropdown panel)
-<div
-  className="absolute z-50 mt-1 w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded-xl shadow-lg">
+        <div className="absolute z-50 mt-1 w-72 max-h-64 overflow-auto bg-white border border-gray-200 rounded-xl shadow-lg">
           <div className="flex items-center gap-2 px-3 py-2 border-b">
             <Search className="size-4 text-gray-500" />
             <input
@@ -564,7 +560,7 @@ const App = () => {
     name: "",
     age: "",
     message: "",
-    studyLang: "", // will hold: 'en' | 'fr' | 'ara' | 'spanish'
+    studyLang: "", // 'en' | 'fr' | 'ara' | 'spanish'
     pack: null,
     packOption: null,
   });
@@ -791,13 +787,13 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
     !isStudyLangValid;
 
   return (
-    <div className={`min-h-screen bg-gray-50 text-gray-800 antialiased ${isRTL ? "font-[system-ui] rtl" : "ltr"}`}>
+    <div className={`min-h-screen bg-gray-50 text-gray-800 antialiased ${isRTL ? "font-[system-ui] rtl" : "ltr"} w-full overflow-x-hidden`}>
       <div className="pointer-events-none fixed inset-x-0 top-0 h-40 bg-blue-50/50" />
-      <header className="sticky top-0 z-20 backdrop-blur-sm bg-white/80 border-b border-gray-200 shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-20 flex items-center justify-between">
+      <header className="sticky top-0 z-20 backdrop-blur-sm bg-white/80 border-b border-gray-200 shadow-sm w-full">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 h-20 flex items-center justify-between w-full">
           <a href="#" className="flex items-center gap-2 min-w-0">
             <div className="h-10 w-10 rounded-xl overflow-hidden border border-blue-400 bg-blue-50 grid place-items-center shrink-0 text-xl font-bold text-blue-600">
-              <img src="logo.jpeg" alt="" />
+              <img src="logo.jpeg" alt="logo" className="h-full w-full object-cover" />
             </div>
             <span className="text-2xl font-extrabold tracking-tight truncate text-blue-800">
               {T.brand}
@@ -816,8 +812,8 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
-        <section className="relative overflow-hidden rounded-3xl border border-blue-100 bg-white p-6 sm:p-10 shadow-xl shadow-blue-50">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12 w-full">
+        <section className="relative overflow-hidden rounded-3xl border border-blue-100 bg-white p-6 sm:p-10 shadow-xl shadow-blue-50 w-full max-w-full">
           <div className="absolute -right-24 -top-24 size-72 rounded-full bg-blue-500/10 blur-3xl" />
           <div className="absolute -left-24 -bottom-24 size-72 rounded-full bg-indigo-500/10 blur-3xl" />
 
@@ -829,21 +825,21 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
           </p>
         </section>
 
-        <section id="contact" className="mt-12 sm:mt-16">
-          <div className="mx-auto max-w-4xl rounded-3xl border border-gray-200 bg-white p-5 sm:p-10 shadow-2xl shadow-gray-100">
+        <section id="contact" className="mt-12 sm:mt-16 w-full">
+          <div className="mx-auto max-w-4xl rounded-3xl border border-gray-200 bg-white p-5 sm:p-10 shadow-2xl shadow-gray-100 w-full">
             <h2 className="text-3xl sm:text-4xl font-bold text-center mb-10 text-blue-700">
               {T.contact_btn}
             </h2>
 
-            <form onSubmit={handleSubmit} className="space-y-10">
+            <form onSubmit={handleSubmit} className="space-y-10 w-full max-w-full overflow-visible">
               {/* SECTION 1: PACKS */}
-              <div id="pack-selection">
+              <div id="pack-selection" className="w-full max-w-full">
                 <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-300 text-blue-700 ${isRTL ? 'text-right' : ''}`}>
                   {T.packs_title}
                 </h3>
                 <p className="text-sm text-blue-600 font-medium text-center mb-6">{T.pack_scroll_tip}</p>
 
-                <div className="space-y-4">
+                <div className="space-y-4 w-full max-w-full">
                   {NEW_PACKS_DATA.map((pack) => {
                     const selected = formData.pack === pack.id;
                     const isExpanded = expandedPacks[pack.id];
@@ -852,7 +848,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                     return (
                       <div
                         key={pack.id}
-                        className={`w-full p-5 rounded-2xl border-2 transition-all duration-300 shadow-lg ${
+                        className={`w-full max-w-full p-5 rounded-2xl border-2 transition-all duration-300 shadow-lg ${
                           selected ? "border-blue-500 bg-blue-50 ring-4 ring-blue-100" : "border-gray-200 bg-white hover:border-blue-200"
                         }`}
                       >
@@ -941,14 +937,14 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
               </div>
 
               {/* SECTION 2: PROFILE & CONTACT */}
-              <div>
+              <div className="w-full max-w-full">
                 <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-300 text-blue-700 ${isRTL ? 'text-right' : ''}`}>
                   {T.section_profile}
                 </h3>
 
-                <div className="grid sm:grid-cols-2 gap-5">
+                <div className="grid sm:grid-cols-2 gap-5 w-full max-w-full">
                   {/* Name */}
-                  <div>
+                  <div className="w-full max-w-full">
                     <label htmlFor="name" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                       {T.name_label}
                     </label>
@@ -960,16 +956,16 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                       onChange={handleChange}
                       required
                       placeholder={T.name_label}
-                      className={`w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition placeholder:text-gray-400 ${isRTL ? "text-right" : ""}`}
+                      className={`w-full max-w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition placeholder:text-gray-400 ${isRTL ? "text-right" : ""}`}
                     />
                   </div>
 
                   {/* Age */}
-                  <div>
+                  <div className="w-full max-w-full">
                     <label htmlFor="age" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                       {T.age_label}
                     </label>
-                   <div className="flex rounded-xl overflow-visible border border-gray-300">
+                    <div className="flex rounded-xl overflow-visible border border-gray-300 w-full max-w-full">
                       <span className={`inline-flex items-center px-3 bg-gray-200 text-gray-500 ${isRTL ? 'rounded-r-xl' : 'rounded-l-xl'}`}>
                         <User className="size-4" />
                       </span>
@@ -983,8 +979,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                         onChange={handleChange}
                         required
                         placeholder={T.age_placeholder}
-                        // FIX: Ensure full border radius on the end of the input
-                        className={`flex-1 min-w-0 px-4 py-2.5 bg-white text-gray-900 outline-none placeholder:text-gray-400 ${isRTL ? "text-right rounded-l-xl" : "rounded-r-xl"} ${!isAgeValid && formData.age !== "" ? "ring-2 ring-red-500 border-red-500" : ""}`}
+                        className={`flex-1 min-w-0 w-full px-4 py-2.5 bg-white text-gray-900 outline-none placeholder:text-gray-400 ${isRTL ? "text-right rounded-l-xl" : "rounded-r-xl"} ${!isAgeValid && formData.age !== "" ? "ring-2 ring-red-500 border-red-500" : ""}`}
                       />
                     </div>
                     {!isAgeValid && formData.age !== "" && (
@@ -993,11 +988,11 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                   </div>
 
                   {/* Study Language - CHOICE INPUT */}
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 w-full max-w-full">
                     <label htmlFor="studyLang" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                       {T.study_lang_label}
                     </label>
-                    <div className="flex border border-gray-300 rounded-xl bg-white">
+                    <div className="flex border border-gray-300 rounded-xl bg-white w-full max-w-full">
                       <span className={`inline-flex items-center px-3 bg-gray-200 text-gray-500 ${isRTL ? 'rounded-r-xl' : 'rounded-l-xl'}`}>
                         <Languages className="size-4" />
                       </span>
@@ -1007,17 +1002,20 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                         value={formData.studyLang}
                         onChange={handleChange}
                         required
-                        // FIX: Ensure select takes up the remaining space and has the correct border radius
-                        className={`flex-1 min-w-0 px-4 py-2.5 bg-white text-gray-900 outline-none appearance-none ${isRTL ? "text-right border-r-0 rounded-l-xl" : "rounded-r-xl border-l-0"}`}
+                        className={`flex-1 min-w-0 w-full px-4 py-2.5 bg-white text-gray-900 outline-none appearance-none ${isRTL ? "text-right border-r-0 rounded-l-xl" : "rounded-r-xl border-l-0"}`}
                       >
                         <option value="" disabled>—</option>
-                        {STUDY_OPTIONS.map(opt => (
+                        {[
+                          { value: "en", label: "English" },
+                          { value: "fr", label: "French" },
+                          { value: "ara", label: "Arabic" },
+                          { value: "spanish", label: "Spanish" },
+                        ].map(opt => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
-                      {/* Chevron icon for select dropdown */}
                       <span className="inline-flex items-center px-3 text-gray-500 pointer-events-none">
-                          <ChevronDown className="size-4" />
+                        <ChevronDown className="size-4" />
                       </span>
                     </div>
                     {!isStudyLangValid && formStatus === 'error' && (
@@ -1026,13 +1024,12 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                   </div>
 
                   {/* Phone: COUNTRY PICKER + LOCAL NUMBER */}
-                  <div className="sm:col-span-2">
+                  <div className="sm:col-span-2 w-full max-w-full">
                     <label className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                       {T.phone_label}
                     </label>
-                    {/* FIX: Removed overflow-hidden and added a main border/rounding to the wrapper */}
-                    <div className="flex border border-gray-300 rounded-xl">
-                      {/* Country selector with search - will manage its own border-r */}
+                    {/* Important: allow dropdown to escape, keep width locked */}
+                    <div className="flex border border-gray-300 rounded-xl w-full max-w-full overflow-visible">
                       <CountryPicker
                         T={T}
                         countries={COUNTRIES}
@@ -1040,8 +1037,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                         onSelect={setCountry}
                         isRTL={isRTL}
                       />
-                      {/* Number field */}
-                      <div className="flex-1 flex items-center">
+                      <div className="flex-1 flex items-center min-w-0">
                         <span className="inline-flex items-center px-3 bg-gray-50 text-gray-600 border-l border-gray-200">
                           +{country.dialCode}
                         </span>
@@ -1052,26 +1048,22 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                           onChange={(e) => setLocalPhone(e.target.value)}
                           required
                           placeholder={T.phone_placeholder}
-                          // FIX: Apply border radius to the right/left based on RTL
-                          className={`flex-1 min-w-0 px-4 py-2.5 bg-white text-gray-900 outline-none placeholder:text-gray-400 ${isRTL ? "text-right rounded-l-xl" : "rounded-r-xl"} ${!isPhoneValid && localPhone !== "" ? "ring-2 ring-red-500 border-red-500" : ""}`}
+                          className={`flex-1 min-w-0 w-full px-4 py-2.5 bg-white text-gray-900 outline-none placeholder:text-gray-400 ${isRTL ? "text-right rounded-l-xl" : "rounded-r-xl"} ${!isPhoneValid && localPhone !== "" ? "ring-2 ring-red-500 border-red-500" : ""}`}
                         />
                       </div>
                     </div>
                     {!isPhoneValid && localPhone !== "" && (
                       <p className={`mt-2 text-xs text-red-600 ${isRTL ? "text-right" : ""}`}>{T.error_phone}</p>
                     )}
-                    {/* Preview of final WhatsApp link */}
                     {isPhoneValid && normalizedWhatsAppDigits && (
-                      <p className="mt-2 text-xs text-green-700">
-                        seems good!
-                      </p>
+                      <p className="mt-2 text-xs text-green-700">seems good!</p>
                     )}
                   </div>
                 </div>
               </div>
 
               {/* SECTION 3: AVAILABILITY */}
-              <div>
+              <div className="w-full max-w-full">
                 <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-300 text-blue-700 ${isRTL ? 'text-right' : ''}`}>
                   {T.section_availability}
                 </h3>
@@ -1088,7 +1080,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
               </div>
 
               {/* MESSAGE (optional) */}
-              <div>
+              <div className="w-full max-w-full">
                 <label htmlFor="message" className={`block text-sm font-medium mb-1 ${isRTL ? "text-right" : ""}`}>
                   {T.message_label}
                 </label>
@@ -1099,7 +1091,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
                   value={formData.message}
                   onChange={handleChange}
                   placeholder={T.message_placeholder}
-                  className={`w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition placeholder:text-gray-400 ${isRTL ? "text-right" : ""}`}
+                  className={`w-full max-w-full rounded-xl border border-gray-300 bg-white text-gray-900 px-4 py-2.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition placeholder:text-gray-400 ${isRTL ? "text-right" : ""}`}
                 />
               </div>
 
@@ -1146,7 +1138,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
         {T.contact_btn}
       </a>
 
-      <footer className="mt-10 sm:mt-12 border-t border-gray-200">
+      <footer className="mt-10 sm:mt-12 border-t border-gray-200 w-full">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8 text-center text-xs sm:text-sm text-gray-500">
           © {new Date().getFullYear()} {T.brand}. {T.footer_text}
         </div>
