@@ -626,7 +626,13 @@ const App = () => {
       packOption: pack?.consumption_options[0]?.id ?? null
     }));
     const section = document.getElementById('pack-selection');
-    if (section) setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    if (section) {
+  setTimeout(() => {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const nameInput = document.getElementById('name');
+    nameInput?.focus();
+  }, 100);
+}
   };
 
   const handlePackOptionSelect = (optionId) => {
@@ -937,7 +943,7 @@ ${payload.availability_summary.split(' || ').map(line => `> ${line}`).join('\n')
               </div>
 
               {/* SECTION 2: PROFILE & CONTACT */}
-              <div className="w-full max-w-full">
+              <div id="profile-section" className="w-full max-w-full">
                 <h3 className={`text-2xl font-semibold mb-6 pb-2 border-b border-gray-300 text-blue-700 ${isRTL ? 'text-right' : ''}`}>
                   {T.section_profile}
                 </h3>
