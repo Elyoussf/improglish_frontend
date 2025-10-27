@@ -255,8 +255,8 @@ const getDayKey = (dayIndex) => FULL_DAYS_DATA[dayIndex].en;
    HELPERS & VALIDATION
    ────────────────────────────────────────────────────────── */
 
-// const API_URL = "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact";
-const API_URL = "http://localhost:8000/api/contact"
+const API_URL = "https://impressed-myrilla-improglish-32946bdb.koyeb.app/api/contact";
+// const API_URL = "https://render.com/docs/web-services"
 
 const validateAge = (age) => {
   const num = parseInt(age, 10);
